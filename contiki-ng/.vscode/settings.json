@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "contiki.h": "c",
+        "tsch.h": "c",
+        "log.h": "c",
+        "simple-udp.h": "c",
+        "radio.h": "c",
+        "routing.h": "c",
+        "netstack.h": "c",
+        "temp-conf.h": "c"
+    }
+}
