@@ -9,11 +9,11 @@
 #
 
 # constantes
-PROJ_DIR="/home/jonatas/testbed-tsch/testbed-tsch-firmware/contiki-ng/examples/rpl-udp-ifpb"
+PROJ_DIR="${HOME}/testbed-tsch/testbed-tsch-firmware/contiki-ng/programs/testbed-tsch/src"
 TARGET="openmote"
 BOARD="openmote-b"
-SERVER_FIRMWARE="udp-server"
-CLIENT_FIRMWARE="udp-client"
+SERVER_FIRMWARE="testbed-server"
+CLIENT_FIRMWARE="testbed-client"
 MAIN_FIRMWARE="all"
 MAIN_TX_POWER=3
 MAIN_SERVER_USB="/dev/ttyUSB1"
@@ -22,7 +22,7 @@ HOPSEQ_CONST_NAME="TSCH_CONF_DEFAULT_HOPPING_SEQUENCE"
 MIN_CH=11
 MAX_CH=26
 
-# tipo do firmware -> server, client, all
+# tipo do firmwar: server | client | all
 firmware_type=""
 
 # potência de transmissão em dBm
@@ -45,10 +45,8 @@ function build_server() {
     make distclean
 
     # grava firmware no dispositivo USB, se este existir
-    if ls ${server_usb} &> /dev/null;
-    then
-        if make TARGET=${TARGET} BOARD=${BOARD} PORT=${server_usb} TX_POWER=${tx_power} ${SERVER_FIRMWARE}.upload;
-        then
+    if ls ${server_usb} &>/dev/null; then
+        if make TARGET=${TARGET} BOARD=${BOARD} PORT=${server_usb} TX_POWER=${tx_power} ${SERVER_FIRMWARE}.upload; then
             echo "Servidor gravado em ${server_usb}."
         else
             echo "Erro ao gravar servidor em ${server_usb}."
@@ -67,18 +65,15 @@ function build_clients() {
     step=2
 
     # percorre dispositivos USB de step em step, gravando-os
-    while ls ${usb_dev} &> /dev/null;
-    do
-        if [ "${usb_dev}" != "${server_usb}" ];
-        then
-            if make TARGET=${TARGET} BOARD=${BOARD} PORT=${usb_dev} TX_POWER=${tx_power} ${CLIENT_FIRMWARE}.upload;
-            then
+    while ls ${usb_dev} &>/dev/null; do
+        if [ "${usb_dev}" != "${server_usb}" ]; then
+            if make TARGET=${TARGET} BOARD=${BOARD} PORT=${usb_dev} TX_POWER=${tx_power} ${CLIENT_FIRMWARE}.upload; then
                 echo "Cliente gravado em ${usb_dev}."
             else
                 echo "Erro ao gravar cliente em ${usb_dev}."
             fi
         fi
-        usb_n=$(( ${usb_n} + ${step} ))
+        usb_n=$((${usb_n} + ${step}))
         usb_dev="/dev/ttyUSB${usb_n}"
     done
 }
@@ -93,12 +88,10 @@ function build_all() {
 function generate_hopseq() {
     seqstr=""
 
-    for (( i=0; i < ${hopseq_len}; i++ ));
-    do
-        ch=$(( ( ${RANDOM} % ( ${MAX_CH} - ${MIN_CH} + 1 ) ) + ${MIN_CH} ))
+    for ((i = 0; i < ${hopseq_len}; i++)); do
+        ch=$(((${RANDOM} % (${MAX_CH} - ${MIN_CH} + 1)) + ${MIN_CH}))
         seqstr+="${ch}"
-        if [ ${i} -lt $(( ${hopseq_len} - 1 )) ];
-        then
+        if [ ${i} -lt $((${hopseq_len} - 1)) ]; then
             seqstr+=","
         fi
     done
@@ -118,8 +111,10 @@ function trap_ctrlc() {
 }
 
 function build() {
+    cd ${PROJ_DIR}
+
     # salva sequência de canais anterior
-    prev_hopseq=$( grep "${HOPSEQ_CONST_NAME}" ${PROJ_DIR}/project-conf.h )
+    prev_hopseq=$(grep "${HOPSEQ_CONST_NAME}" ${PROJ_DIR}/project-conf.h)
 
     trap "trap_ctrlc" 2
 
@@ -127,16 +122,13 @@ function build() {
     define_hopseq "#define ${HOPSEQ_CONST_NAME} ${hopseq}"
 
     # grava firmware
-    if [ "${firmware_type}" == "server" ];
-    then
+    if [ "${firmware_type}" == "server" ]; then
         build_server
 
-    elif [ "${firmware_type}" == "client" ];
-    then
+    elif [ "${firmware_type}" == "client" ]; then
         build_clients
 
-    elif [ "${firmware_type}" == "all" ];
-    then
+    elif [ "${firmware_type}" == "all" ]; then
         build_all
 
     else
@@ -150,27 +142,24 @@ function build() {
 
 # processando argumentos
 arg=""
-for a in $@;
-do
+for a in $@; do
     case ${arg} in
-        "-f") firmware_type=${a} ;;
-        "-h") hopseq=${a} ;;
-        "-l") hopseq_len=${a} ;;
-        "-p") tx_power=${a} ;;
-        "-s") server_usb=${a} ;;
+    "-f") firmware_type=${a} ;;
+    "-h") hopseq=${a} ;;
+    "-l") hopseq_len=${a} ;;
+    "-p") tx_power=${a} ;;
+    "-s") server_usb=${a} ;;
     esac
     arg=${a}
 done
 
 # firmware padrão
-if [ -z ${firmware_type} ];
-then
+if [ -z ${firmware_type} ]; then
     firmware_type=${MAIN_FIRMWARE}
 fi
 
 # potência de transmissão padrão
-if [ -z ${tx_power} ];
-then
+if [ -z ${tx_power} ]; then
     tx_power=${MAIN_TX_POWER}
 fi
 
@@ -178,23 +167,20 @@ fi
 # quando não especificado em uma gravação do tipo "cliente", a gravação
 # é feita em todos os dispositivos USB conectados, portanto não há nescessidade
 # de definir um dispositivo USB padrão para o servidor
-if [ -z ${server_usb} ] && [ "${firmware_type}" != "client" ];
-then
+if [ -z ${server_usb} ] && [ "${firmware_type}" != "client" ]; then
     server_usb=${MAIN_SERVER_USB}
 fi
 
 # sequência de saltos TSCH
-if [ ! -z ${hopseq_len} ];
-then
-    hopseq="$( generate_hopseq )"
+if [ ! -z ${hopseq_len} ]; then
+    hopseq="$(generate_hopseq)"
     echo "sequência de saltos gerada: ${hopseq}"
 fi
 
-if [ -z ${hopseq} ];
-then
+if [ -z ${hopseq} ]; then
     hopseq=${MAIN_HOPSEQ}
 else
-    hopseq="(uint8_t[]) { ${hopseq} }" 
+    hopseq="(uint8_t[]) { ${hopseq} }"
 fi
 
 build

@@ -68,9 +68,9 @@ static void sendto_serial(struct serial_data *data) {
 }
 
 static void get_rssi(int32_t *output) {
-    static radio_value_t *rssi;
+    static radio_value_t rssi;
 
-    NETSTACK_RADIO.get_value(RADIO_PARAM_LAST_RSSI, rssi);
+    NETSTACK_RADIO.get_value(RADIO_PARAM_LAST_RSSI, &rssi);
 
     *output = (int32_t)rssi;
 }
