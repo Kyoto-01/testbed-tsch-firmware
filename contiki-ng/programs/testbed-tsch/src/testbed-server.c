@@ -77,12 +77,9 @@ static void get_rssi(int32_t *output) {
 
 static void get_addr6(uip_ipaddr_t *output) {
     if (!output->u8[0]) {
-        *output = uip_ds6_get_global(-1)->ipaddr;
+        *output = uip_ds6_get_link_local(-1)->ipaddr;
         if (!output->u8[0]) {
-            *output = uip_ds6_get_link_local(-1)->ipaddr;
-            if (!output->u8[0]) {
-                return;
-            }
+            return;
         }
     }
 }
