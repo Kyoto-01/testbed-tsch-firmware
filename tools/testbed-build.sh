@@ -9,7 +9,7 @@
 #
 
 # constantes
-PROJ_DIR="${HOME}/testbed-tsch/testbed-tsch-firmware/contiki-ng/programs/testbed-tsch/src"
+PROJ_DIR="${HOME}/testbed-tsch/testbed-tsch-firmware/contiki-ng/programs/testbed-tsch"
 TARGET="openmote"
 BOARD="openmote-b"
 SERVER_FIRMWARE="testbed-server"

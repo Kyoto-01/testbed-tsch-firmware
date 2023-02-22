@@ -1,3 +1,3 @@
 # Testbed TSCH Firmware
 
-Códigos relacionados ao firmware gravado nos OpenMote-B do testbed.
+Módulo do testbed TSCH referente ao firmware dos motes e suas ferramentas de automação.

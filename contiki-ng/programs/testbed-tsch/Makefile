@@ -1,7 +1,7 @@
 CONTIKI_PROJECT = testbed-client testbed-server
 all: $(CONTIKI_PROJECT)
 
-CONTIKI=../../..
+CONTIKI=../..
 MODULES += os/services/shell
 MAKE_MAC = MAKE_MAC_TSCH
 
