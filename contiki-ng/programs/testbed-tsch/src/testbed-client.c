@@ -1,6 +1,10 @@
 #include <inttypes.h>
 #include <stdint.h>
 
+#ifndef STDLIB_H
+#include <stdlib.h>
+#endif
+
 #include "contiki.h"
 #include "dev/radio.h"
 #include "net/ipv6/simple-udp.h"
@@ -55,7 +59,7 @@ static void get_txpwr(uint32_t *output) {
 
     NETSTACK_RADIO.get_value(RADIO_PARAM_TXPOWER, &txpwr);
 
-    output = (uint32_t *)txpwr;
+    *output = (uint32_t)txpwr;
 }
 
 static void get_ch(uint32_t *output) {
@@ -63,33 +67,26 @@ static void get_ch(uint32_t *output) {
 }
 
 static void get_addr6(uip_ipaddr_t *output) {
-    static uip_ipaddr_t addr6;
-
-    if (!addr6.u8[0]) {
-        addr6 = uip_ds6_get_global(-1)->ipaddr;
-        if (!addr6.u8[0])
-            return;
+    if (!output->u8[0]) {
+        *output = uip_ds6_get_global(-1)->ipaddr;
+        if (!output->u8[0]) {
+            *output = uip_ds6_get_link_local(-1)->ipaddr;
+            if (!output->u8[0]) {
+                return;
+            }
+        }
     }
-
-    output = &addr6;
 }
 
 static uint32_t get_root_addr6(uip_ipaddr_t *output) {
-    static uip_ipaddr_t addr6;
-    static uint32_t reachable;
-
-    reachable = NETSTACK_ROUTING.get_root_ipaddr(&addr6);
-
-    output = &addr6;
-
-    return reachable;
+    return NETSTACK_ROUTING.get_root_ipaddr(output);
 }
 
-static void ipaddr_to_str(uip_ipaddr_t *addr, uint8_t *output) {
+static uint8_t *ipaddr_to_str(uip_ipaddr_t *addr) {
     if (addr->u8[0]) {
-        ascii_to_hex((char *)addr->u8, (char *)output);
+        return ascii_to_hex(addr->u8, 16);
     } else {
-        output = (uint8_t *)("");
+        return (uint8_t *)'\0';
     }
 }
 
@@ -101,32 +98,29 @@ static void build_data(struct net_data *data, uint8_t *output) {
         data->rx,
         data->txpwr,
         data->ch);
-
-    printf("%s", output);
 }
 
 static void send_data() {
-    static uip_ipaddr_t src_ipaddr;
     static uip_ipaddr_t dest_ipaddr;
+    static uint8_t data[DATALEN];
 
     get_txpwr(&ndata.txpwr);
     get_ch(&ndata.ch);
 
-    get_addr6(&src_ipaddr);
-    ipaddr_to_str(&src_ipaddr, sdata.addrsend);
-
     if (
         NETSTACK_ROUTING.node_is_reachable() &&
         get_root_addr6(&dest_ipaddr)) {
-        ipaddr_to_str(&dest_ipaddr, sdata.addrrecv);
+        free(sdata.addrrecv);
+        sdata.addrrecv = ipaddr_to_str(&dest_ipaddr);
 
-        build_data(&ndata, sdata.data);
+        build_data(&ndata, data);
+        sdata.data = data;
 
         /* send to DAG root */
         simple_udp_sendto(
             &udp_conn,
-            sdata.data,
-            strlen((char *)sdata.data),
+            data,
+            strlen((char *)data),
             &dest_ipaddr);
 
         sendto_serial(&sdata);
@@ -154,10 +148,18 @@ AUTOSTART_PROCESSES(&testbed_client_process);
 
 PROCESS_THREAD(testbed_client_process, ev, data) {
     static struct etimer periodic_timer;
+    static uip_ipaddr_t ipaddr;
 
     PROCESS_BEGIN();
 
+    /* Setting static data */
+
+    // Firmware type (server or client)
     sdata.firmtype = FIRMWARE_TYPE;
+
+    // Mote address
+    get_addr6(&ipaddr);
+    sdata.addrsend = ipaddr_to_str(&ipaddr);
 
     /* set transmission power */
     NETSTACK_RADIO.set_value(RADIO_PARAM_TXPOWER, TX_POWER);

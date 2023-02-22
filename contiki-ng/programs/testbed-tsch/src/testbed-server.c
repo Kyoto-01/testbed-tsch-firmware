@@ -27,6 +27,10 @@
  *
  */
 
+#ifndef STDLIB_H
+#include <stdlib.h>
+#endif
+
 #include "contiki.h"
 #include "dev/radio.h"
 #include "net/ipv6/simple-udp.h"
@@ -68,38 +72,34 @@ static void get_rssi(int32_t *output) {
 
     NETSTACK_RADIO.get_value(RADIO_PARAM_LAST_RSSI, rssi);
 
-    output = (int32_t *)rssi;
+    *output = (int32_t)rssi;
 }
 
 static void get_addr6(uip_ipaddr_t *output) {
-    static uip_ipaddr_t addr6;
-
-    if (!addr6.u8[0]) {
-        addr6 = uip_ds6_get_global(-1)->ipaddr;
-        if (!addr6.u8[0])
-            return;
+    if (!output->u8[0]) {
+        *output = uip_ds6_get_global(-1)->ipaddr;
+        if (!output->u8[0]) {
+            *output = uip_ds6_get_link_local(-1)->ipaddr;
+            if (!output->u8[0]) {
+                return;
+            }
+        }
     }
-
-    output = &addr6;
 }
 
-static void ipaddr_to_str(uip_ipaddr_t *addr, uint8_t *output) {
+static uint8_t *ipaddr_to_str(uip_ipaddr_t *addr) {
     if (addr->u8[0]) {
-        ascii_to_hex((char *)addr->u8, (char *)output);
+        return ascii_to_hex(addr->u8, 16);
     } else {
-        output = (uint8_t *)("");
+        return (uint8_t *)'\0';
     }
 }
 
 static void recv_data(uip_ipaddr_t *sender_addr, uint8_t *data) {
-    static uip_ipaddr_t recv_addr;
-
     get_rssi(&sdata.rssi);
 
-    get_addr6(&recv_addr);
-    ipaddr_to_str(&recv_addr, sdata.addrrecv);
-
-    ipaddr_to_str(sender_addr, sdata.addrsend);
+    free(sdata.addrsend);
+    sdata.addrsend = ipaddr_to_str(sender_addr);
 
     sdata.data = data;
 }
@@ -124,9 +124,18 @@ PROCESS(testbed_server_process, "testbed server");
 AUTOSTART_PROCESSES(&testbed_server_process);
 
 PROCESS_THREAD(testbed_server_process, ev, data) {
+    static uip_ipaddr_t recv_addr;
+
     PROCESS_BEGIN();
 
+    /* Setting static data */
+
+    // Firmware type (server or client)
     sdata.firmtype = FIRMWARE_TYPE;
+
+    // Mote address
+    get_addr6(&recv_addr);
+    sdata.addrrecv = ipaddr_to_str(&recv_addr);
 
     /* Set transmission power */
     NETSTACK_RADIO.set_value(RADIO_PARAM_TXPOWER, TX_POWER);
