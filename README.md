@@ -67,7 +67,7 @@ Obs.: Caso prefira colocar o repositório em algum outro local, deverá editar o
 
 ### 3.2 Preparação de ambiente de desenvolvimento Contiki-NG
 
-Siga os passos do tutorial disponível [aqui](https://github.com/Kyoto-01/testbed-tsch/blob/main/doc/howto/contiki-ng/setup-contiki-ng.md).
+Siga os passos do tutorial disponível [aqui](doc/contiki-ng/setup-contiki-ng.md).
 
 ### 3.3. Clonagem do repositório 
 

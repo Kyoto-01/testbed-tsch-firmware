@@ -5,7 +5,7 @@
 # em motes da plataforma OpenMote-B.
 #
 # Uso:
-# testbed-build.sh [-f fimware_type] [-p tx_power] [-s server_usb] 
+# testbed-build.sh [-f firmware_type] [-p tx_power] [-s server_usb] 
 #           [-l hop_sequence_len] [-h hop_sequence]
 #
 
