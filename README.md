@@ -87,11 +87,8 @@ Conecte os motes em um hub USB já conectado em uma máquina Linux. De preferên
 
 ### 3.5. Gravação dos firmwares
 
-Execute a ferramenta de build.
+Execute a ferramenta de build disponível em ```testbed-tsch-firmware/tools/testbed-build```.
 
-```
-cd testbed-tsch-firmware/tools/testbed-build
-```
 ```
 ./testbed-build.sh
 ```
