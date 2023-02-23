@@ -1,14 +1,17 @@
 #!/bin/bash
 
 #
-# script para gravar firmwares Contiki-NG 6TiSCH cliente/servidor
+# script para gravar firmwares cliente/servidor Contiki-NG
+# em motes da plataforma OpenMote-B.
 #
 # Uso:
-# build.sh [-f fimware_type] [-p tx_power] [-s server_usb] [-l hop_sequence_len]
-#           [-h hop_sequence]
+# testbed-build.sh [-f fimware_type] [-p tx_power] [-s server_usb] 
+#           [-l hop_sequence_len] [-h hop_sequence]
 #
 
 # constantes
+
+# diretório onde se encontram os códigos dos firmwares
 PROJ_DIR="${HOME}/testbed-tsch/testbed-tsch-firmware/contiki-ng/programs/testbed-tsch"
 TARGET="openmote"
 BOARD="openmote-b"
