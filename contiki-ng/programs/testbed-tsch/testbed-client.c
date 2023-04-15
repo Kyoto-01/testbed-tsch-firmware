@@ -19,7 +19,7 @@
 
 #define FIRMWARE_TYPE (uint8_t *)("client")
 
-#define SEND_INTERVAL (5 * CLOCK_SECOND)
+#define SEND_INTERVAL (SEND_INTV_SECS * CLOCK_SECOND)
 #define DATALEN 100
 
 #define LOG_MODULE FIRMWARE_TYPE
@@ -27,8 +27,9 @@
 
 struct serial_data {
     uint8_t *firmtype;
-    uint8_t *addrsend;
-    uint8_t *addrrecv;
+    uint8_t *addr;
+    uint8_t *peer;
+    uint32_t datalen;  // bits
     uint8_t *data;
 };
 
@@ -47,10 +48,11 @@ static struct net_data ndata = {.tx = 0, .rx = 0};
 
 static void sendto_serial(struct serial_data *data) {
     printf(
-        "%s,%s,%s,%s\n",
+        "%s,%s,%s,%lu,%s\n",
         data->firmtype,
-        data->addrsend,
-        data->addrrecv,
+        data->addr,
+        data->peer,
+        data->datalen,
         data->data);
 }
 
@@ -82,6 +84,12 @@ static uint32_t get_root_addr6(uip_ipaddr_t *output) {
     return NETSTACK_ROUTING.get_root_ipaddr(output);
 }
 
+static void get_datalen(uint8_t *data, uint32_t *output) {
+    /* get data length in bits */
+
+    *output  = get_str_size(data) * sizeof(data[0]) * 8;
+}
+
 static uint8_t *ipaddr_to_str(uip_ipaddr_t *addr) {
     if (addr->u8[0]) {
         return ascii_to_hex(addr->u8, 16);
@@ -92,7 +100,7 @@ static uint8_t *ipaddr_to_str(uip_ipaddr_t *addr) {
 
 static void build_data(struct net_data *data, uint8_t *output) {
     snprintf(
-        (char *)output, sizeof(char*) * DATALEN,
+        (char *)output, sizeof(char *) * DATALEN,
         "%llu,%llu,%lu,%lu",
         data->tx,
         data->rx,
@@ -104,17 +112,20 @@ static void send_data() {
     static uip_ipaddr_t dest_ipaddr;
     static uint8_t data[DATALEN];
 
-    get_txpwr(&ndata.txpwr);
-    get_ch(&ndata.ch);
-
     if (
         NETSTACK_ROUTING.node_is_reachable() &&
         get_root_addr6(&dest_ipaddr)) {
-        free(sdata.addrrecv);
-        sdata.addrrecv = ipaddr_to_str(&dest_ipaddr);
 
+        get_txpwr(&ndata.txpwr);
+        get_ch(&ndata.ch);
         build_data(&ndata, data);
+
+        free(sdata.peer);
+        sdata.peer = ipaddr_to_str(&dest_ipaddr);
+
         sdata.data = data;
+
+        get_datalen(data, &sdata.datalen);
 
         /* send to DAG root */
         simple_udp_sendto(
@@ -159,7 +170,7 @@ PROCESS_THREAD(testbed_client_process, ev, data) {
 
     // Mote address
     get_addr6(&ipaddr);
-    sdata.addrsend = ipaddr_to_str(&ipaddr);
+    sdata.addr = ipaddr_to_str(&ipaddr);
 
     /* set transmission power */
     NETSTACK_RADIO.set_value(RADIO_PARAM_TXPOWER, TX_POWER);

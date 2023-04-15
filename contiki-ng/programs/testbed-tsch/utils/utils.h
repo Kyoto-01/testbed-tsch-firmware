@@ -22,3 +22,12 @@ static uint8_t *ascii_to_hex(uint8_t *input, uint32_t inputlen) {
 
     return tmp;
 }
+
+static uint32_t get_str_size(uint8_t *input) {
+    uint8_t len;
+
+    for (len = 0; input[len]; ++len)
+        ;
+
+    return len;
+}

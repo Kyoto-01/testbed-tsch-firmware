@@ -28,6 +28,7 @@ O cliente aguarda por uma confirmação quando envia os seus dados para o servid
 O cliente envia dados para o servidor no formato de uma string de campos separados por vírgula.
 
 Os campos do protocolo são os seguintes, nessa mesma ordem:
+
 * **tx**: Quantidade de pacotes transmitidos.
 * **rx**: Quantidade de pacotes confirmados.
 * **txpwr**: Potência de transmissão.
@@ -41,17 +42,21 @@ Todos os dados que são transmitidos por um cliente ou recebidos por um servidor
 Tanto o cliente quanto o servidor enviam dados para a saída serial no formato de uma string de campos separados por vírgula.
 
 O cliente envia os seguintes dados para a saída serial:
-* **firmtype**: Tipo do firmware (client | server).
-* **addrsend**: Endereço do transmissor (cliente).
-* **addrrecv**: Endereço do receptor (servidor).
+
+* **firmtype**: Tipo do firmware (client).
+* **addr**: Endereço do cliente.
+* **peer**: Endereço do servidor.
+* **datalen**: Tamando do campo *data* (em bits).
 * **data**: Dados que foram enviados para o servidor.
 
 O servidor envia os seguintes dados para a saída serial:
-* **firmtype**: Tipo do firmware (client | server).
-* **addrsend**: Endereço do transmissor (cliente).
-* **addrrecv**: Endereço do receptor (servidor).
-* **data**: Dados que foram recebidos de um cliente.
+
+* **firmtype**: Tipo do firmware (server).
+* **addr**: Endereço do servidor.
+* **peer**: Endereço do cliente.
 * **rssi**: Intensidade do sinal recebido.
+* **datalen**: Tamando do campo *data* (em bits).
+* **data**: Dados que foram recebidos de um cliente.
 
 ## 3. Colocando o Testbed TSCH Firmware para rodar
 

@@ -5,7 +5,7 @@
 # em motes da plataforma OpenMote-B.
 #
 # Uso:
-# testbed-build.sh [-f firmware_type] [-p tx_power] [-s server_usb] 
+# testbed-build.sh [-f firmware_type] [-p tx_power] [-s server_usb]
 #           [-l hop_sequence_len] [-h hop_sequence]
 #
 
@@ -18,7 +18,8 @@ BOARD="openmote-b"
 SERVER_FIRMWARE="testbed-server"
 CLIENT_FIRMWARE="testbed-client"
 MAIN_FIRMWARE="all"
-MAIN_TX_POWER=3
+MAIN_TX_POWER=3  # dBm
+MAIN_SEND_INTV=5 # segundos
 MAIN_SERVER_USB="/dev/ttyUSB1"
 MAIN_HOPSEQ="TSCH_HOPPING_SEQUENCE_4_4"
 HOPSEQ_CONST_NAME="TSCH_CONF_DEFAULT_HOPPING_SEQUENCE"
@@ -31,13 +32,17 @@ firmware_type=""
 # potência de transmissão em dBm
 tx_power=""
 
+# Intervalo de transmissão dos clientes em segundos
+send_intv=""
+
 # dispositivo USB do nó servidor
 server_usb=""
 
 # sequência de saltos TSCH
 hopseq=""
 
-# tamanho da sequenência de saltos TSCH (no caso de geração aleatória da sequência)
+# tamanho da sequenência de saltos TSCH (no caso de geração 
+# aleatória da sequência)
 hopseq_len=""
 
 # sequência de canais anterior à gravação
@@ -49,7 +54,8 @@ function build_server() {
 
     # grava firmware no dispositivo USB, se este existir
     if ls ${server_usb} &>/dev/null; then
-        if make TARGET=${TARGET} BOARD=${BOARD} PORT=${server_usb} TX_POWER=${tx_power} ${SERVER_FIRMWARE}.upload; then
+        if make TARGET=${TARGET} BOARD=${BOARD} PORT=${server_usb} \
+            TX_POWER=${tx_power} ${SERVER_FIRMWARE}.upload; then
             echo "Servidor gravado em ${server_usb}."
         else
             echo "Erro ao gravar servidor em ${server_usb}."
@@ -70,10 +76,12 @@ function build_clients() {
     # percorre dispositivos USB de step em step, gravando-os
     while ls ${usb_dev} &>/dev/null; do
         if [ "${usb_dev}" != "${server_usb}" ]; then
-            if make TARGET=${TARGET} BOARD=${BOARD} PORT=${usb_dev} TX_POWER=${tx_power} ${CLIENT_FIRMWARE}.upload; then
-                echo "Cliente gravado em ${usb_dev}."
+            if make TARGET=${TARGET} BOARD=${BOARD} PORT=${usb_dev} \
+                TX_POWER=${tx_power} SEND_INTV_SECS=${send_intv} \
+                ${CLIENT_FIRMWARE}.upload; then
+                echo "Client recorded at ${usb_dev}."
             else
-                echo "Erro ao gravar cliente em ${usb_dev}."
+                echo "Error when trying to write client at ${usb_dev}."
             fi
         fi
         usb_n=$((${usb_n} + ${step}))
@@ -149,6 +157,7 @@ for a in $@; do
     case ${arg} in
     "-f") firmware_type=${a} ;;
     "-h") hopseq=${a} ;;
+    "-i") send_intv=${a} ;;
     "-l") hopseq_len=${a} ;;
     "-p") tx_power=${a} ;;
     "-s") server_usb=${a} ;;
@@ -168,8 +177,8 @@ fi
 
 # dispositivo USB padrão
 # quando não especificado em uma gravação do tipo "cliente", a gravação
-# é feita em todos os dispositivos USB conectados, portanto não há nescessidade
-# de definir um dispositivo USB padrão para o servidor
+# é feita em todos os dispositivos USB conectados, portanto não há 
+# nescessidade de definir um dispositivo USB padrão para o servidor
 if [ -z ${server_usb} ] && [ "${firmware_type}" != "client" ]; then
     server_usb=${MAIN_SERVER_USB}
 fi

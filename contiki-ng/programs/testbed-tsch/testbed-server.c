@@ -48,10 +48,11 @@
 
 struct serial_data {
     uint8_t *firmtype;
-    uint8_t *addrsend;
-    uint8_t *addrrecv;
-    uint8_t *data;
+    uint8_t *addr;
+    uint8_t *peer;
     int32_t rssi;
+    uint32_t datalen;
+    uint8_t *data;
 };
 
 static struct simple_udp_connection udp_conn;
@@ -59,12 +60,13 @@ static struct serial_data sdata;
 
 static void sendto_serial(struct serial_data *data) {
     printf(
-        "%s,%s,%s,%s,%ld\n",
+        "%s,%s,%s,%ld,%lu,%s\n",
         data->firmtype,
-        data->addrsend,
-        data->addrrecv,
-        data->data,
-        data->rssi);
+        data->addr,
+        data->peer,
+        data->rssi,
+        data->datalen,
+        data->data);
 }
 
 static void get_rssi(int32_t *output) {
@@ -73,6 +75,12 @@ static void get_rssi(int32_t *output) {
     NETSTACK_RADIO.get_value(RADIO_PARAM_LAST_RSSI, &rssi);
 
     *output = (int32_t)rssi;
+}
+
+static void get_datalen(uint8_t *data, uint32_t *output) {
+    /* get data length in bits */
+
+    *output  = get_str_size(data) * sizeof(data[0]) * 8;
 }
 
 static void get_addr6(uip_ipaddr_t *output) {
@@ -94,9 +102,10 @@ static uint8_t *ipaddr_to_str(uip_ipaddr_t *addr) {
 
 static void recv_data(uip_ipaddr_t *sender_addr, uint8_t *data) {
     get_rssi(&sdata.rssi);
+    get_datalen(data, &sdata.datalen);
 
-    free(sdata.addrsend);
-    sdata.addrsend = ipaddr_to_str(sender_addr);
+    free(sdata.peer);
+    sdata.peer = ipaddr_to_str(sender_addr);
 
     sdata.data = data;
 }
@@ -132,7 +141,7 @@ PROCESS_THREAD(testbed_server_process, ev, data) {
 
     // Mote address
     get_addr6(&recv_addr);
-    sdata.addrrecv = ipaddr_to_str(&recv_addr);
+    sdata.addr = ipaddr_to_str(&recv_addr);
 
     /* Set transmission power */
     NETSTACK_RADIO.set_value(RADIO_PARAM_TXPOWER, TX_POWER);
