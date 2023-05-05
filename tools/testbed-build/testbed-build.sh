@@ -5,7 +5,7 @@
 # em motes da plataforma OpenMote-B.
 #
 # Uso:
-# testbed-build.sh [-f firmware_type] [-p tx_power] [-s server_usb]
+# testbed-build.sh [-f client | server | all | stopped] [-p tx_power] [-s server_usb]
 #           [-l hop_sequence_len] [-h hop_sequence]
 #
 
@@ -17,6 +17,7 @@ TARGET="openmote"
 BOARD="openmote-b"
 SERVER_FIRMWARE="testbed-server"
 CLIENT_FIRMWARE="testbed-client"
+STOPPED_FIRMWARE="testbed-stopped"
 MAIN_FIRMWARE="all"
 MAIN_TX_POWER=3  # dBm
 MAIN_SEND_INTV=5 # segundos
@@ -95,6 +96,29 @@ function build_all() {
     build_clients
 }
 
+# grava firmware nulo, para parar o testbed
+function build_stopped() {
+    make distclean
+
+    usb_n=1
+    usb_dev="/dev/ttyUSB${usb_n}"
+    step=2
+
+    # percorre dispositivos USB de step em step, gravando-os
+    while ls ${usb_dev} &>/dev/null; do
+
+        if make TARGET=${TARGET} BOARD=${BOARD} PORT=${usb_dev} \
+            ${STOPPED_FIRMWARE}.upload; then
+            echo "Mote stopped at ${usb_dev}."
+        else
+            echo "Error when trying to stop mote at ${usb_dev}."
+        fi
+
+        usb_n=$((${usb_n} + ${step}))
+        usb_dev="/dev/ttyUSB${usb_n}"
+    done
+}
+
 # gera sequência de canais TSCH aleatórios separados por vírgula
 function generate_hopseq() {
     seqstr=""
@@ -141,6 +165,9 @@ function build() {
 
     elif [ "${firmware_type}" == "all" ]; then
         build_all
+
+    elif [ "${firmware_type}" == "stopped" ]; then
+        build_stopped
 
     else
         echo "Tipo de firmware '${firmware_type}' não aceito!"
