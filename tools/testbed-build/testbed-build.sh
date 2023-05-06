@@ -5,9 +5,9 @@
 # em motes da plataforma OpenMote-B.
 #
 # Uso:
-# testbed-build.sh [-f client | server | all | stopped] [-p tx_power] [-s server_usb]
-#           [-l hop_sequence_len] [-h hop_sequence]
-#
+# testbed-build.sh [-f client | server | all | stopped] [-i interval] 
+#                   [-p tx_power] [-s server_usb] [-l hop_sequence_len] [-h hop_sequence]
+#                   [-u usb_ports]
 
 # constantes
 
@@ -38,6 +38,9 @@ send_intv=""
 
 # dispositivo USB do nó servidor
 server_usb=""
+
+# dispositivos USB do testbed
+usb_ports=""
 
 # sequência de saltos TSCH
 hopseq=""
@@ -74,8 +77,15 @@ function build_clients() {
     usb_dev="/dev/ttyUSB${usb_n}"
     step=2
 
+    if [ ! -z "${usb_ports}" ]; then
+        usb_n=0
+        usb_dev=${usb_ports[${usb_n}]}
+        step=1
+    fi
+
     # percorre dispositivos USB de step em step, gravando-os
     while ls ${usb_dev} &>/dev/null; do
+
         if [ "${usb_dev}" != "${server_usb}" ]; then
             if make TARGET=${TARGET} BOARD=${BOARD} PORT=${usb_dev} \
                 TX_POWER=${tx_power} SEND_INTV_SECS=${send_intv} \
@@ -85,8 +95,18 @@ function build_clients() {
                 echo "Error when trying to write client at ${usb_dev}."
             fi
         fi
+
         usb_n=$((${usb_n} + ${step}))
-        usb_dev="/dev/ttyUSB${usb_n}"
+
+        if [ ! -z "${usb_ports}" ]; then
+            if [ ${usb_n} -ge ${#usb_ports[@]} ]; then
+                break
+            else
+                usb_dev=${usb_ports[${usb_n}]}
+            fi
+        else
+            usb_dev="/dev/ttyUSB${usb_n}"
+        fi
     done
 }
 
@@ -104,6 +124,12 @@ function build_stopped() {
     usb_dev="/dev/ttyUSB${usb_n}"
     step=2
 
+    if [ ! -z ${usb_ports} ]; then
+        usb_n=0
+        usb_dev=${usb_ports[${usb_n}]}
+        step=1
+    fi
+
     # percorre dispositivos USB de step em step, gravando-os
     while ls ${usb_dev} &>/dev/null; do
 
@@ -115,7 +141,16 @@ function build_stopped() {
         fi
 
         usb_n=$((${usb_n} + ${step}))
-        usb_dev="/dev/ttyUSB${usb_n}"
+
+        if [ ! -z ${usb_ports} ]; then
+            if [ ${usb_n} -ge ${#usb_ports[@]} ]; then
+                break
+            else
+                usb_dev=${usb_ports[${usb_n}]}
+            fi
+        else
+            usb_dev="/dev/ttyUSB${usb_n}"
+        fi
     done
 }
 
@@ -188,6 +223,7 @@ for a in $@; do
     "-l") hopseq_len=${a} ;;
     "-p") tx_power=${a} ;;
     "-s") server_usb=${a} ;;
+    "-u") usb_ports=${a} ;;
     esac
     arg=${a}
 done
@@ -202,12 +238,27 @@ if [ -z ${tx_power} ]; then
     tx_power=${MAIN_TX_POWER}
 fi
 
+# intervalo entre transmissões dos clientes
+if [ -z ${send_intv} ]; then
+    send_intv=${MAIN_SEND_INTV}
+fi
+
+# dispositivos usb do testbed
+if [ ! -z ${usb_ports} ]; then
+    IFS=',' read -r -a arr <<< "${usb_ports}"
+    usb_ports=(${arr[@]})
+fi
+
 # dispositivo USB padrão
 # quando não especificado em uma gravação do tipo "cliente", a gravação
 # é feita em todos os dispositivos USB conectados, portanto não há 
 # nescessidade de definir um dispositivo USB padrão para o servidor
 if [ -z ${server_usb} ] && [ "${firmware_type}" != "client" ]; then
-    server_usb=${MAIN_SERVER_USB}
+    if [ ! -z "${usb_ports}" ]; then
+        server_usb="${usb_ports[0]}"
+    else
+        server_usb=${MAIN_SERVER_USB}
+    fi
 fi
 
 # sequência de saltos TSCH

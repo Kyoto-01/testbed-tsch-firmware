@@ -1,19 +1,23 @@
 # Testbed TSCH Firmware
 
 Módulo do testbed TSCH referente ao firmware dos motes e suas ferramentas de automação.
-O código-fonte dos firmwares cliente e servidor se encontram em ```testbed-tsch-firmware/contiki-ng/programs/testbed-tsch```.
+O código-fonte dos firmwares client, server e stopped se encontram em ```testbed-tsch-firmware/contiki-ng/programs/testbed-tsch```.
 
-Os firmwares foram escritos para executar em um ambiente Contiki-NG e o script de build foi desenvolvido para gravar os firmwares em motes da plataforma OpenMote-B. Se estiver utilizando uma outra plataforma será nescessário modificar o código da ferramenta de build. Se desejar usar um outro sistema operacional, estes firmwares não serão úteis.
+Os firmwares foram escritos para executar em um ambiente Contiki-NG e o script de build foi desenvolvido para gravar os firmwares em motes da plataforma OpenMote-B. Se estiver utilizando uma outra plataforma, será nescessário modificar o código da ferramenta de build. Se desejar usar um outro sistema operacional, estes firmwares não serão úteis.
 
 ## 1. Módulos
 
-### 1.1. Firmware cliente
+### 1.1. Firmware client
 
 Coleta dados de transmissão e os envia para o servidor. Também envia os mesmos dados pela saída serial para que possam ser manipulados por algum outro software.
 
-### 1.2. Firmware servidor
+### 1.2. Firmware server
 
 Aguarda por pacotes enviados pelos clientes. Ao receber algo, ecoa os dados como forma de confirmação e encaminha os dados recebidos para a saída serial para que possam ser manipulados por algum outro software.
+
+### 1.3. Firmware stopped
+
+Utilizado para interromper o fluxo de dados do testbed. O firmware stopped é nulo, ou seja, não executa nenhuma ação.
 
 ## 2. Protocolo 
 
