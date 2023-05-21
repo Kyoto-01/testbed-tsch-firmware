@@ -27,7 +27,7 @@ HOPSEQ_CONST_NAME="TSCH_CONF_DEFAULT_HOPPING_SEQUENCE"
 MIN_CH=11
 MAX_CH=26
 
-# tipo do firmwar: server | client | all
+# tipo do firmware: server | client | all
 firmware_type=""
 
 # potência de transmissão em dBm
