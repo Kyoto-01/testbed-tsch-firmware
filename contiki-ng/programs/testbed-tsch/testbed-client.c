@@ -101,7 +101,7 @@ static uint8_t *ipaddr_to_str(uip_ipaddr_t *addr) {
 static void build_data(struct net_data *data, uint8_t *output) {
     snprintf(
         (char *)output, sizeof(char *) * DATALEN,
-        "%llu,%llu,%lu,%lu",
+        "%llu,%llu,%lu,%lu,",
         data->tx,
         data->rx,
         data->txpwr,
